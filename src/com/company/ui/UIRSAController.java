@@ -1,5 +1,11 @@
 package com.company.ui;
 
+import com.company.algorithmrsa.rsaaes.AlgorithmAES;
+import com.company.algorithmrsa.rsaaes.GenerateKey;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -7,6 +13,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 
 public class UIRSAController extends JFrame {
     private JLabel JLabelImage;
@@ -22,9 +31,12 @@ public class UIRSAController extends JFrame {
     private JTable jTable;
     private JTextField fileNameText;
 
-    DefaultTableModel dtm = new DefaultTableModel(0,0);
-    String header[] = new String[]{"No","Name File", "File Type", "Proccess","Start Time","End Time","Total Time (s/m)"};
-
+    DefaultTableModel dtm = new DefaultTableModel(0, 0);
+    String header[] = new String[]{"No", "Name File", "File Type", "Proccess", "Start Time", "End Time", "Total Time (s/m)"};
+    int a = 1;
+    String aesKeyUI, namaFile;
+    String[] arrNamaFile;
+    File encryptedFile;
 
     public UIRSAController() {
         initComponent();
@@ -47,51 +59,67 @@ public class UIRSAController extends JFrame {
 
         btnBrowser.setText("Browse");
         btnBrowser.addActionListener((event) -> {
-            try{
+            try {
                 browserActionPerpormance(event);
-            }catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
 
-        JLabel1.setFont(new Font("Times New Roman",1,24));
+        JLabel1.setFont(new Font("Times New Roman", 1, 24));
         JLabel1.setText("Algorithm RSA");
         JLabel1.setHorizontalAlignment(SwingConstants.CENTER);
         JLabel1.setVerticalAlignment(SwingConstants.CENTER);
 
         btnEnCription.setText("Encription");
         btnEnCription.addActionListener((event) -> {
-            try{
+            try {
                 // dumy method
-                browserActionPerpormance(event);
-            }catch (IOException e){
+                btnEncryptionAction(event);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NoSuchPaddingException e) {
+                e.printStackTrace();
+            } catch (IllegalBlockSizeException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (BadPaddingException e) {
+                e.printStackTrace();
+            } catch (InvalidKeyException e) {
                 e.printStackTrace();
             }
         });
 
-        btnDescription.setText("Encription");
+        btnDescription.setText("Decription");
         btnDescription.addActionListener((event) -> {
-            try{
+            try {
                 // dumy method
-                browserActionPerpormance(event);
-            }catch (IOException e){
+                btnDencryptionAction(event);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NoSuchPaddingException e) {
+                e.printStackTrace();
+            } catch (IllegalBlockSizeException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (BadPaddingException e) {
+                e.printStackTrace();
+            } catch (InvalidKeyException e) {
                 e.printStackTrace();
             }
         });
 
-        JLabel2.setFont(new Font("Times New Roman",1,24));
+        JLabel2.setFont(new Font("Times New Roman", 1, 24));
         JLabel2.setText("Output");
         JLabel2.setHorizontalAlignment(SwingConstants.CENTER);
         JLabel2.setVerticalAlignment(SwingConstants.CENTER);
 
         btnReset.setText("Reset");
         btnReset.addActionListener((event) -> {
-            try{
-                // dumy method
-                browserActionPerpormance(event);
-            }catch (IOException e){
-                e.printStackTrace();
-            }
+            // dumy method
+            btnResetAction(event);
         });
 
         fileNameText.setEditable(false);
@@ -142,37 +170,115 @@ public class UIRSAController extends JFrame {
         pack();
     }
 
+    private void btnResetAction(ActionEvent event) {
+        resetValue();
+    }
+
+    public void resetValue() {
+        JLabelImage.setIcon(new ImageIcon(""));
+        fileNameText.setText("");
+
+        // reset table row
+        a = 1;
+        aesKeyUI = "";
+        namaFile = "";
+        arrNamaFile = new String[50];
+        File encrypted;
+        if (dtm.getRowCount() > 0) {
+            for (int i = jTable.getRowCount() - 1; i > -1; i--) {
+                dtm.removeRow(i);
+            }
+        }
+    }
+
+    private void btnEncryptionAction(ActionEvent event) throws NoSuchPaddingException, IllegalBlockSizeException, IOException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        if (fileNameText.getText() != null && !fileNameText.getText().equals("")) {
+            namaFile = fileNameText.getText();
+            arrNamaFile = namaFile.split("\\\\");
+            namaFile = arrNamaFile[arrNamaFile.length - 1];
+            arrNamaFile = namaFile.split("\\.");
+
+            GenerateKey gk = this.genKeyData();
+            File readFile = new File(fileNameText.getText());
+            encryptedFile = new File("DataFile/" + arrNamaFile[0].concat("_Encrypted.").concat(arrNamaFile[1]));
+            Timestamp startTime = new Timestamp(System.currentTimeMillis());
+            long start = System.currentTimeMillis();
+            AlgorithmAES.encryptedAES(gk.getAesKey(), readFile, encryptedFile);
+            long end = System.currentTimeMillis();
+            long elapsedTime = end - start;
+            Timestamp endTime = new Timestamp(System.currentTimeMillis());
+            aesKeyUI = gk.getAesKey();
+            jTable.getModel();
+            JLabelImage.setText("");
+            JOptionPane.showMessageDialog(null, "Success Encrypted File");
+            dtm.addRow(new Object[]{a++,arrNamaFile[0],"Encrypted",startTime,endTime,elapsedTime});
+        } else {
+            JOptionPane.showMessageDialog(null, "Please Choose File");
+        }
+    }
+
+    private GenerateKey genKeyData() throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        GenerateKey gk = new GenerateKey();
+        gk.generateKeyRandom();
+        gk.generateKeyPair();
+        gk.encryptedAesKey();
+        gk.decryptedAesKey();
+        return gk;
+    }
+
+    private void btnDencryptionAction(ActionEvent event) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, IOException, BadPaddingException, InvalidKeyException {
+        if (aesKeyUI != null && !aesKeyUI.equals("")) {
+            File decriptedFile = new File("Datafile/" + arrNamaFile[0].concat("_Decrypted.").concat(arrNamaFile[1]));
+            Timestamp startTime = new Timestamp(System.currentTimeMillis());
+            long start = System.currentTimeMillis();
+            AlgorithmAES.dencryptedAES(aesKeyUI,encryptedFile,decriptedFile);
+            long end = System.currentTimeMillis();
+            long elapsedTime = end - start;
+            Timestamp endTime = new Timestamp(System.currentTimeMillis());
+            JOptionPane.showMessageDialog(null,"File Success Decrypted");
+            dtm.addRow(new Object[]{a++,arrNamaFile[0],"Decrypted",startTime,endTime,elapsedTime});
+        } else {
+            JOptionPane.showMessageDialog(null,"Please Choose File Decrypted");
+        }
+    }
+
     private void browserActionPerpormance(ActionEvent event) throws IOException {
-        JFileChooser browseImageFIle= new JFileChooser();
+        JFileChooser browseImageFIle = new JFileChooser();
         browseImageFIle.showOpenDialog(null);
         File f = browseImageFIle.getSelectedFile();
-        String fileName= f.getAbsolutePath();
+        String fileName = f.getAbsolutePath();
         fileNameText.setText(fileName);
 
-        Image getAbsolutePath=null;
+        Image getAbsolutePath = null;
         String extension = "";
         int i = fileName.lastIndexOf('.');
-        if(i>=0){
-            extension= fileName.substring(i+1);
+        if (i >= 0) {
+            extension = fileName.substring(i + 1);
         }
 
         ImageIcon imageIcon;
         Image image;
 
-        if("BMP".equals(extension.toUpperCase())){
-            image= ImageIO.read(new File((f.getAbsolutePath())));
+        if ("BMP".equals(extension.toUpperCase())) {
+            image = ImageIO.read(new File((f.getAbsolutePath())));
             imageIcon = new ImageIcon();
-        }else{
+        } else {
             imageIcon = new ImageIcon(fileName);
-            image = imageIcon.getImage().getScaledInstance(JLabelImage.getWidth(),JLabelImage.getHeight(),Image.SCALE_SMOOTH);
+            image = imageIcon.getImage().getScaledInstance(JLabelImage.getWidth(), JLabelImage.getHeight(), Image.SCALE_SMOOTH);
         }
 
-        JLabel jLabel= new JLabel(imageIcon);
+        JLabel jLabel = new JLabel(imageIcon);
         JLabelImage.setIcon(imageIcon);
         JLabelImage.setIcon(new ImageIcon(image));
     }
 
     public static void main(String[] args) {
+
+        /**
+         * #1. create UI
+         * #2, Action all btn
+         * */
+
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
