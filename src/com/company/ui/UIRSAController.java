@@ -1,4 +1,4 @@
-package com.company;
+package com.company.ui;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
